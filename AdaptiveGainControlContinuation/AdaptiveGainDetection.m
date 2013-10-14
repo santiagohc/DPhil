@@ -1,5 +1,6 @@
 function[] = AdaptiveGainDetection(NumTrialsTot, AllMeans, AllConcentrations, AllContrasts, AllBoundaryAngles)
 %[data] = AdaptiveGainSensitivity()
+%AAAHHHAHAHAH
 %...
 tic
 % NameFileToSave = 'Prueba';
