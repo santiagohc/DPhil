@@ -1,9 +1,10 @@
 function[] = AdaptiveGainDetection(NumTrialsTot, AllMeans, AllConcentrations, AllContrasts, AllBoundaryAngles)
 %[data] = AdaptiveGainSensitivity()
-%AAAHHHAHAHAH
+%
 %...
 tic
 % NameFileToSave = 'Prueba';
+
 %% Define Initial variables if empty
 
 %
@@ -21,7 +22,7 @@ end
 
 %a DEFAULT set of CONTRAST  values for the stimuli...
 if isempty(AllContrasts)
-    AllContrasts = [30];
+    AllContrasts = [60];
 end
 
 %a DEFAULT number of TRIALS per BLOCK
@@ -90,7 +91,7 @@ NumMasksEnd = ceil(rand(1,NumTrials)*2);
 %Define whether it is an Integration-of-Mean trial or a
 %Sensitivity-to-Angle trial Currently set to 2:1 proportion
 TypeOfTrial = (Shuffle(rem((1:(ceil(NumTrials/3))*3),3))+1)<3;
-TypeOfTrial = zeros(NumTrials,1);%TypeOfTrial(1:NumTrials); % zeros(NumTrials,1);%
+TypeOfTrial = zeros(NumTrials,1);% TypeOfTrial(1:NumTrials); % zeros(NumTrials,1);%
 
 %Random vector of Sample-Numbers, we need to take the those values only for
 %the Sensitivity-to-Angle trials
@@ -126,7 +127,7 @@ AppearBlueCircleRight = BlueCircleRight*ones(NumTrials,1);% Fixates the Blue Res
 
 %Random Vector of the Presence or absence of a Gabor for detection
 AppearGaborInNoise = Shuffle(rem((1:(ceil(NumTrials/2))*2),2));% One means Present
-ConcenDetection = 30;
+ContrastDetection = 30;
 NoiseFactorDetection = 128;
 
 %% Open Screen Window
@@ -144,6 +145,7 @@ SizeCue = floor(SizeCue/2)*2;
 FixationPointSize = 5;
 GaborFactor = 7;
 fixColour = 100;
+GaborFreq = 0.02;
 
 
 ScreenSize = rect(3:4);%width and height of SCREEN
@@ -263,7 +265,7 @@ NTrCompDiff = 5;
 
 try
     
-    mask=SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,0,0.05,0,5)+ SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,90,0.05,0,5);
+    mask=SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,0,GaborFreq,0,30)+ SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,90,GaborFreq,0,30);
     DifficultyFactor10 = 0;
     DifficultyFactor20 = 0;
     for Trial = 1: NumTrials
@@ -380,27 +382,29 @@ try
             if CurrSamp == 1
                 
                 %Generate NoisyPatch even if integration trial
-                Noise = (rand(300)-.5)*NoiseFactorDetection;
+%                 Noise = (rand(300)-.5)*NoiseFactorDetection;
+                [Noise] = CreateSmoothedNoise(300,10,6);
                 
             end
             
             if TypeOfTrial(Trial) == 0
                 if CurrSamp == NumSamplesEachTrial(Trial)
-                    GaborSamp = SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,AllAnglesDegreesObserved(CurrSamp,Trial),.05,0,ConcenDetection)*255;
+                    AllAnglesDegreesObserved(CurrSamp,Trial) = round(rand(1)*360);
+                    GaborSamp = SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,AllAnglesDegreesObserved(CurrSamp,Trial),GaborFreq,0,20)*255;%ContrastDetection
                     NoisyPatch = GaborSamp;
-                    if AppearGaborInNoise
+                    if AppearGaborInNoise(Trial)
                         NoisyPatch(IsCentralCircle) = ...
-                            (NoisyPatch(IsCentralCircle)+Noise(IsCentralCircle))/2;
+                            (NoisyPatch(IsCentralCircle)+Noise(IsCentralCircle));
                     else
                         NoisyPatch(IsCentralCircle) = Noise(IsCentralCircle);
                     end
                     GaborSamp = NoisyPatch;
                 else
-                    GaborSamp = SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,AllAnglesDegreesObserved(CurrSamp,Trial),.05,0,DesiredContrastsEachTrial(1,Trial))*255;
+                    GaborSamp = SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,AllAnglesDegreesObserved(CurrSamp,Trial),GaborFreq,0,DesiredContrastsEachTrial(1,Trial))*255;
                     
                 end
             else
-                GaborSamp = SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,AllAnglesDegreesObserved(CurrSamp,Trial),.05,0,DesiredContrastsEachTrial(1,Trial))*255;            
+                GaborSamp = SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,AllAnglesDegreesObserved(CurrSamp,Trial),GaborFreq,0,DesiredContrastsEachTrial(1,Trial))*255;            
             end
             
             
@@ -541,31 +545,35 @@ try
         end
         
         
-        
-        %         %Show one or two masks
-        %         for j = 1: NumMasksEnd(Trial)
-        IniTimeMask = GetSecs;
-        ElapsedTimeMask = 0;
-        %             if j == 2
-        %                 WaitSecs(InterMaskDur)
-        %             end
-        Screen(w,'Fillrect',[0 0 255],RewardBoxFilling);
-        %category
-        Screen(w,'Framerect',0,RewardBox,3);
-        %             Screen(w,'FillOval',255,tinyrect);
-        Screen(w,'PutImage',MaskRGB,CueRectangle);
-        Screen(w, 'FillOval', [fixColour fixColour fixColour], FixationPoint);
-        Screen(w,'Flip');%Print to screen after an interval after Mask...
-        FlagFinishMask = (SampDur + InterSampInterval) *1000;
-        while ElapsedTimeMask < FlagFinishMask
-            ElapsedTimeMask = ceil(1000*(GetSecs - IniTimeMask));
+        if TypeOfTrial(Trial)
+            %         %Show one or two masks
+            %         for j = 1: NumMasksEnd(Trial)
+            IniTimeMask = GetSecs;
+            ElapsedTimeMask = 0;
+            %             if j == 2
+            %                 WaitSecs(InterMaskDur)
+            %             end
+            Screen(w,'Fillrect',[0 0 255],RewardBoxFilling);
+            %category
+            Screen(w,'Framerect',0,RewardBox,3);
+            %             Screen(w,'FillOval',255,tinyrect);
+            Screen(w,'PutImage',MaskRGB,CueRectangle);
+            Screen(w, 'FillOval', [fixColour fixColour fixColour], FixationPoint);
+            Screen(w,'Flip');%Print to screen after an interval after Mask...
+            FlagFinishMask = (SampDur + InterSampInterval) *1000;
+            while ElapsedTimeMask < FlagFinishMask
+                ElapsedTimeMask = ceil(1000*(GetSecs - IniTimeMask));
+            end
+            Screen(w,'FillRect',128);  % Gray screen
+            Screen(w,'PutImage',NoGaborRGB,CueRectangle);
+            Screen(w, 'FillOval', [fixColour fixColour fixColour], FixationPoint);
+            %    Screen(w,'FillOval',255,tinyrect);
+            Screen(w,'Flip');%Print to screen at a point relative to Trial Onset
+            %         end
+            
+        else
+            
         end
-        Screen(w,'FillRect',128);  % Gray screen
-        Screen(w,'PutImage',NoGaborRGB,CueRectangle);
-        Screen(w, 'FillOval', [fixColour fixColour fixColour], FixationPoint);
-        %    Screen(w,'FillOval',255,tinyrect);
-        Screen(w,'Flip');%Print to screen at a point relative to Trial Onset
-        %         end
         %% End Of Stimulus Presentations Beginning of Variable Gap
         EndOfStimPresentation = GetSecs;
         ElapsedTimeGap = 0;
