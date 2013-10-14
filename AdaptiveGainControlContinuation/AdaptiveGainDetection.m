@@ -3,7 +3,7 @@ function[] = AdaptiveGainDetection(NumTrialsTot, AllMeans, AllConcentrations, Al
 %
 %...
 tic
-% NameFileToSave = 'Prueba';
+NameFileToSave = 'Prueba';
 
 %% Define Initial variables if empty
 
@@ -22,7 +22,7 @@ end
 
 %a DEFAULT set of CONTRAST  values for the stimuli...
 if isempty(AllContrasts)
-    AllContrasts = [60];
+    AllContrasts = [30];
 end
 
 %a DEFAULT number of TRIALS per BLOCK
@@ -91,7 +91,7 @@ NumMasksEnd = ceil(rand(1,NumTrials)*2);
 %Define whether it is an Integration-of-Mean trial or a
 %Sensitivity-to-Angle trial Currently set to 2:1 proportion
 TypeOfTrial = (Shuffle(rem((1:(ceil(NumTrials/3))*3),3))+1)<3;
-TypeOfTrial = zeros(NumTrials,1);% TypeOfTrial(1:NumTrials); % zeros(NumTrials,1);%
+TypeOfTrial =  TypeOfTrial(1:NumTrials); % zeros(NumTrials,1);%
 
 %Random vector of Sample-Numbers, we need to take the those values only for
 %the Sensitivity-to-Angle trials
@@ -383,14 +383,14 @@ try
                 
                 %Generate NoisyPatch even if integration trial
 %                 Noise = (rand(300)-.5)*NoiseFactorDetection;
-                [Noise] = CreateSmoothedNoise(300,10,6);
+                [Noise] = CreateSmoothedNoise(300,10,30);
                 
             end
             
             if TypeOfTrial(Trial) == 0
                 if CurrSamp == NumSamplesEachTrial(Trial)
                     AllAnglesDegreesObserved(CurrSamp,Trial) = round(rand(1)*360);
-                    GaborSamp = SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,AllAnglesDegreesObserved(CurrSamp,Trial),GaborFreq,0,20)*255;%ContrastDetection
+                    GaborSamp = SCreateGaborINT(DiamCircle,GaborFactor*DiamCircle,AllAnglesDegreesObserved(CurrSamp,Trial),GaborFreq,0,60)*255;%ContrastDetection
                     NoisyPatch = GaborSamp;
                     if AppearGaborInNoise(Trial)
                         NoisyPatch(IsCentralCircle) = ...
@@ -477,6 +477,7 @@ try
         Screen(w,'Flip');%Print to screen at a point relative to Trial Onset
         %         end
         
+        
         AfterMaskIni = GetSecs;
         AfterMaskTime = 0;
         
@@ -517,6 +518,7 @@ try
                 Screen(w,'PutImage',GaborRGBSamp,CueRectangle);
                 Screen(w, 'FillOval', [fixColour fixColour fixColour], FixationPoint);
                 Screen(w,'Flip');
+%                 pause
                 
             elseif ElapsedMilisecs >= TimeEndSamp
                 %pause
